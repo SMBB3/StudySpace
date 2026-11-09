@@ -355,6 +355,93 @@ math-field {
 .viewing #viewTitle { display: block; }
 .viewing .preview { min-height: 300px; font-size: 17px; }
 
+/* Стили для всплывающей плашки */
+.feedback-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    
+    /* Изначально скрыта и сдвинута вниз */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Класс, который делает плашку видимой */
+.feedback-toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.toast-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    padding: 4px;
+    cursor: pointer;
+    line-height: 1;
+}
+.toast-close:hover {
+    color: var(--text);
+    background: var(--btn2);
+    border-radius: 6px;
+}
+
+.toast-title {
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 8px;
+    padding-right: 20px; /* Чтобы текст не наезжал на крестик */
+    color: var(--text);
+}
+
+.toast-text {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.toast-btn {
+    display: block;
+    text-align: center;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 9px;
+    transition: background 0.15s;
+}
+
+.toast-btn:hover {
+    background: #5548bd;
+}
+
+/* Адаптация для мобильных (чтобы не перекрывала весь экран) */
+@media (max-width: 500px) {
+    .feedback-toast {
+        bottom: 15px;
+        right: 15px;
+        left: 15px;
+        width: auto;
+    }
+}
+
 @media(max-width: 750px) {
     .app { grid-template-columns: 1fr; }
     .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
@@ -464,6 +551,13 @@ math-field {
     </div>
 
 </main>
+</div>
+<!-- Всплывающая плашка обратной связи -->
+<div class="feedback-toast" id="feedbackToast">
+    <button class="toast-close" id="closeToast" title="Закрыть">✕</button>
+    <div class="toast-title">Как вам StudySpace? 💬</div>
+    <div class="toast-text">Помогите сделать приложение лучше — пройдите короткий опрос.</div>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSc5oVujju0XHf65p54-TcXjQ0eFQEhWyZY_eFXgsLLxf-5ufg/viewform?usp=dialog" target="_blank" rel="noopener" class="toast-btn" id="feedbackLink">Оставить отзыв</a>
 </div>
 
 <script>
@@ -969,6 +1063,40 @@ exportedKey = contentKey();
 if (window.customElements) {
     customElements.whenDefined("math-field").then(() => loadCurrent());
 }
+
+// Логика всплывающей плашки
+document.addEventListener("DOMContentLoaded", () => {
+    const toast = $("feedbackToast");
+    const closeBtn = $("closeToast");
+    const feedbackLink = $("feedbackLink");
+    
+    // Проверяем, не закрывал ли пользователь плашку раньше
+    const isToastDismissed = localStorage.getItem("studyspace_feedback_dismissed");
+
+    if (!isToastDismissed && toast) {
+        // Показываем через 30 секунд (30000 мс)
+        setTimeout(() => {
+            toast.classList.add("show");
+        }, 30000);
+    }
+
+    // Закрытие по крестику
+    if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+            toast.classList.remove("show");
+            // Запоминаем, что пользователь закрыл плашку, чтобы больше не показывать
+            localStorage.setItem("studyspace_feedback_dismissed", "true");
+        });
+    }
+
+    // Если пользователь перешел по ссылке, тоже скрываем плашку
+    if (feedbackLink) {
+        feedbackLink.addEventListener("click", () => {
+            toast.classList.remove("show");
+            localStorage.setItem("studyspace_feedback_dismissed", "true");
+        });
+    }
+});
 </script>
 </body>
 </html>
