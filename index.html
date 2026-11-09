@@ -1,0 +1,974 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudySpace — Математические заметки</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathlive"></script>
+
+<style>
+* { box-sizing: border-box; }
+
+:root {
+    --accent: #6658d3;
+    --accent-text: #5145b5;
+    --accent-light: #eeecff;
+    --bg: #f5f6fa;
+    --border: #e5e7ef;
+    --text: #292d3a;
+    --text2: #505568;
+    --muted: #9298a8;
+    --surface: #ffffff;
+    --surface2: #fafaff;
+    --surface3: #fcfcff;
+    --btn2: #eef0f7;
+    --btn2-hover: #e3e5ef;
+    color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+    --accent-text: #b9b3ff;
+    --accent-light: #2b2860;
+    --bg: #12131a;
+    --border: #2e3140;
+    --text: #e7e8ef;
+    --text2: #b7bbcb;
+    --muted: #8c91a3;
+    --surface: #1d1f2a;
+    --surface2: #191b25;
+    --surface3: #1b1d28;
+    --btn2: #2a2d3a;
+    --btn2-hover: #353949;
+    color-scheme: dark;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+button, input, textarea { font: inherit; }
+
+.app {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+    max-width: 1500px;
+    margin: auto;
+    background: var(--surface);
+}
+
+.sidebar {
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    padding: 25px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    /* панель всегда высотой с экран, список заметок внутри прокручивается */
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.logo {
+    font-size: 23px;
+    font-weight: 800;
+    padding: 5px;
+}
+
+.logo span { color: var(--accent); }
+
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 14px;
+    transition: .15s;
+}
+
+.primary {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+}
+
+.primary:hover { background: #5548bd; }
+
+.secondary {
+    background: var(--btn2);
+    color: var(--text2);
+}
+
+.secondary:hover { background: var(--btn2-hover); }
+
+.search, .title-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 11px;
+    outline: none;
+    background: var(--surface);
+    color: var(--text);
+}
+
+.search:focus, .title-input:focus {
+    border-color: var(--accent);
+}
+
+.section-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.note-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1 1 120px;
+    min-height: 120px;
+    overflow-y: auto;
+}
+
+.note-item {
+    background: transparent;
+    text-align: left;
+    padding: 11px;
+    color: var(--text2);
+}
+
+.note-item.active {
+    background: var(--accent-light);
+    color: var(--accent-text);
+}
+
+.note-item strong {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.note-item small {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+main {
+    padding: 38px clamp(20px, 5vw, 65px);
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    align-self: start;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 29px;
+    margin: 8px 0;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.title-input {
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    padding: 13px 0;
+}
+
+.editor {
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.editor-toolbar {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    padding: 11px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+}
+
+.tool {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 7px 11px;
+}
+
+.tool:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+}
+
+#body {
+    width: 100%;
+    min-height: 190px;
+    resize: vertical;
+    border: none;
+    outline: none;
+    padding: 18px;
+    font: 15px/1.8 Arial, sans-serif;
+    background: transparent;
+    color: var(--text);
+}
+
+.formula-section {
+    padding: 17px;
+    background: var(--surface3);
+    border-top: 1px solid var(--border);
+}
+
+.formula-heading {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+math-field {
+    display: block;
+    width: 100%;
+    min-height: 65px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 23px;
+    --primary: var(--accent);
+    --selection-background-color: #e8e5ff;
+}
+
+.symbols {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.symbols button {
+    min-width: 38px;
+    font-size: 16px;
+}
+
+.insert-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 13px;
+}
+
+.preview-heading {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--muted);
+    margin: 25px 0 10px;
+}
+
+.preview {
+    min-height: 100px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    line-height: 1.8;
+    overflow-x: auto;
+    overflow-wrap: anywhere;
+}
+
+.formula-block {
+    overflow-x: auto;
+    padding: 12px 0;
+    text-align: center;
+}
+
+.katex-display {
+    margin: 0.8em 0 !important;
+}
+
+.empty {
+    color: var(--muted);
+}
+
+
+.select-row { display: flex; gap: 6px; }
+.select-row button { flex: 1; padding: 8px 6px; font-size: 13px; }
+.danger { color: #d6455d; }
+.danger:disabled { opacity: .45; cursor: default; }
+
+.note-item.selectable { display: flex; gap: 10px; align-items: center; }
+.note-item.selected { background: var(--accent-light); box-shadow: inset 0 0 0 2px var(--accent); }
+.note-item .check { font-size: 18px; color: var(--accent); }
+.note-text { min-width: 0; flex: 1; }
+
+.side-tools {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.io-row { display: flex; gap: 8px; }
+.io-row button { flex: 1; }
+
+#viewTitle {
+    display: none;
+    font-size: 30px;
+    margin: 0 0 18px;
+}
+
+/* Режим просмотра: только готовая заметка */
+.viewing .title-input,
+.viewing .editor,
+.viewing .preview-heading { display: none; }
+.viewing #viewTitle { display: block; }
+.viewing .preview { min-height: 300px; font-size: 17px; }
+
+@media(max-width: 750px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .sidebar { position: static; height: auto; overflow: visible; }
+    .note-list { flex: none; min-height: 0; max-height: 140px; overflow: auto; }
+    main { padding: 24px 16px; }
+    .topbar { flex-direction: column; align-items: flex-start; }
+    h1 { font-size: 24px; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<aside class="sidebar">
+    <div class="logo">Study<span>Space</span></div>
+
+    <button class="primary" id="newNote">＋ Новая заметка</button>
+
+    <div class="select-row">
+        <button class="secondary" id="selectToggle">Выбрать</button>
+        <button class="secondary" id="selectAll" hidden>Все</button>
+        <button class="secondary danger" id="deleteSelected" hidden disabled>Удалить (0)</button>
+    </div>
+
+    <input class="search" id="search" placeholder="Поиск заметок...">
+
+    <div class="section-label">Мои заметки</div>
+    <div class="note-list" id="noteList"></div>
+
+    <div class="side-tools">
+                <div class="io-row">
+            <button class="secondary" id="exportBtn">Экспорт</button>
+            <button class="secondary" id="importBtn">Импорт</button>
+        </div>
+        <button class="secondary danger" id="clearAll">Очистить все данные</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+    </div>
+</aside>
+
+<main>
+
+    <div class="topbar">
+        <div>
+            <div class="subtitle">РАБОЧЕЕ ПРОСТРАНСТВО</div>
+            <h1>Математические заметки</h1>
+            <div class="subtitle">Конспекты, формулы и записи.</div>
+        </div>
+
+        <div class="actions">
+            <button class="primary" id="modeBtn">Сохранить</button>
+            <button class="secondary" id="themeToggle">☾ Тёмная</button>
+            <button class="secondary" id="exportOne">Скачать заметку</button>
+            <button class="secondary" id="duplicate">Дублировать</button>
+            <button class="secondary" id="delete">Удалить</button>
+        </div>
+    </div>
+
+    <input class="title-input" id="noteTitle" placeholder="Название заметки">
+
+    <div class="editor">
+
+        <div class="editor-toolbar">
+            <button class="tool" data-wrap="**">Жирный</button>
+            <button class="tool" data-wrap="*">Курсив</button>
+            <button class="tool" data-prefix="## ">Заголовок</button>
+            <button class="tool" data-prefix="- ">Список</button>
+        </div>
+
+        <textarea id="body" placeholder="Начните писать конспект..."></textarea>
+
+        <div class="formula-section">
+            <div class="formula-heading">Математический редактор</div>
+
+            <math-field id="formula" math-virtual-keyboard-policy="manual"></math-field>
+
+            <div class="symbols" id="symbols">
+                <button class="tool" data-latex="\frac{a}{b}">a⁄b</button>
+                <button class="tool" data-latex="\sqrt{x}">√</button>
+                <button class="tool" data-latex="x^{2}">x²</button>
+                <button class="tool" data-latex="\int_{a}^{b} f(x)\,dx">∫</button>
+                <button class="tool" data-latex="\sum_{i=1}^{n} a_i">Σ</button>
+                <button class="tool" data-latex="\prod_{i=1}^{n} a_i">Π</button>
+                <button class="tool" data-latex="\lim_{x\to a} f(x)">lim</button>
+                <button class="tool" data-latex="\begin{pmatrix}a&b\\c&d\end{pmatrix}">Матрица</button>
+                <button class="tool" data-latex="\alpha">α</button>
+                <button class="tool" data-latex="\beta">β</button>
+                <button class="tool" data-latex="\pi">π</button>
+                <button class="tool" data-latex="\infty">∞</button>
+                <button class="tool" data-latex="\leq">≤</button>
+                <button class="tool" data-latex="\geq">≥</button>
+                <button class="tool" data-latex="\neq">≠</button>
+                <button class="tool" data-latex="\approx">≈</button>
+            </div>
+
+            <div class="insert-row">
+                <button class="primary" id="insertFormula">Вставить формулу</button>
+            </div>
+        </div>
+    </div>
+
+    <h2 id="viewTitle"></h2>
+    <div class="preview-heading">ПРЕДПРОСМОТР</div>
+    <div class="preview" id="preview">
+        <span class="empty">Здесь будет отображаться заметка.</span>
+    </div>
+
+</main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = "studyspace_notes_v2";
+
+let notes = [];
+let activeId = null;
+let saveTimer;
+
+function saveAll() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
+
+function currentNote() {
+    return notes.find(n => n.id === activeId);
+}
+
+function escapeHTML(text) {
+    return text.replace(/[&<>"']/g, c => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;",
+        '"':"&quot;", "'":"&#39;"
+    })[c]);
+}
+
+function loadNotes() {
+    try {
+        notes = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    } catch {
+        notes = [];
+    }
+
+    if (!Array.isArray(notes)) notes = [];
+
+    if (notes.length === 0) {
+        notes.push({
+            id: crypto.randomUUID(),
+            title: "Моя первая заметка",
+            body: "Добро пожаловать в StudySpace!\n\nПопробуйте добавить математическую формулу.",
+            updated: Date.now()
+        });
+        saveAll();
+    }
+
+    activeId = notes[0].id;
+}
+
+function renderList() {
+    const query = $("search").value.toLowerCase();
+    $("noteList").innerHTML = "";
+
+    selected.forEach(id => { if (!notes.some(n => n.id === id)) selected.delete(id); });
+    updateSelectUI();
+
+    notes
+        .filter(n => (n.title + " " + n.body).toLowerCase().includes(query))
+        .sort((a,b) => b.updated - a.updated)
+        .forEach(note => {
+            const button = document.createElement("button");
+            button.className = "note-item"
+                + (selectMode ? " selectable" : "")
+                + (selectMode && selected.has(note.id) ? " selected" : "")
+                + (!selectMode && note.id === activeId ? " active" : "");
+
+            const title = document.createElement("strong");
+            title.textContent = note.title || "Без названия";
+
+            const date = document.createElement("small");
+            date.textContent = new Date(note.updated).toLocaleDateString("ru-RU");
+
+            const text = document.createElement("div");
+            text.className = "note-text";
+            text.append(title, date);
+
+            if (selectMode) {
+                const check = document.createElement("span");
+                check.className = "check";
+                check.textContent = selected.has(note.id) ? "☑" : "☐";
+                button.append(check, text);
+            } else {
+                button.append(text);
+            }
+
+            button.onclick = () => {
+                if (selectMode) {
+                    if (selected.has(note.id)) selected.delete(note.id);
+                    else selected.add(note.id);
+                    renderList();
+                    return;
+                }
+                saveCurrent();
+                activeId = note.id;
+                loadCurrent();
+            };
+
+            $("noteList").appendChild(button);
+        });
+}
+
+// Рамки \( \) \[ \] и $ нужны только в тексте заметки; внутри формулы KaTeX их не понимает
+function stripMathDelimiters(tex) {
+    return tex.replace(/(?<!\\)\\[()\[\]]/g, "").replace(/\$/g, "").trim();
+}
+
+function renderMath(tex, display) {
+    tex = stripMathDelimiters(tex);
+    if (!window.katex) return escapeHTML(tex);
+
+    try {
+        return katex.renderToString(tex, {
+            throwOnError: false,
+            displayMode: display,
+            strict: "ignore"
+        });
+    } catch {
+        return escapeHTML(tex);
+    }
+}
+
+function renderPreview() {
+    const note = currentNote();
+    if (!note) return;
+
+    const stash = [];
+    const hold = html => "\u0000" + (stash.push(html) - 1) + "\u0000";
+
+    // 1. Формулы выносим ДО экранирования, иначе & и < в матрицах ломаются.
+    let text = (note.body || "")
+        .replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) =>
+            hold('<div class="formula-block">' + renderMath(tex.trim(), true) + '</div>'))
+        .replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) =>
+            hold(renderMath(tex.trim(), false)));
+
+    // 2. Экранируем обычный текст и применяем форматирование.
+    let html = escapeHTML(text)
+        .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+        .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+        .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        .replace(/^- (.+)$/gm, "• $1")
+        .replace(/\n/g, "<br>");
+
+    // 3. Возвращаем готовые формулы на место.
+    html = html.replace(/\u0000(\d+)\u0000/g, (_, i) => stash[+i]);
+
+    $("preview").innerHTML = html ||
+        '<span class="empty">Здесь будет отображаться заметка.</span>';
+}
+
+function loadCurrent() {
+    const note = currentNote();
+    if (!note) return;
+
+    $("noteTitle").value = note.title;
+    $("body").value = note.body;
+    if (typeof $("formula").setValue === "function") $("formula").setValue("");
+    applyMode(note);
+
+    renderList();
+    renderPreview();
+}
+
+function saveCurrent() {
+    const note = currentNote();
+    if (!note) return;
+
+    note.title = $("noteTitle").value.trim() || "Без названия";
+    note.body = $("body").value;
+    note.updated = Date.now();
+
+    saveAll();
+    renderList();
+    renderPreview();
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveCurrent, 300);
+}
+
+// ---------- Выбор и удаление нескольких заметок ----------
+let selectMode = false;
+const selected = new Set();
+
+function updateSelectUI() {
+    $("selectToggle").textContent = selectMode ? "Отмена" : "Выбрать";
+    $("selectAll").hidden = !selectMode;
+    $("deleteSelected").hidden = !selectMode;
+    $("deleteSelected").disabled = selected.size === 0;
+    $("deleteSelected").textContent = "Удалить (" + selected.size + ")";
+}
+
+function visibleNotes() {
+    const query = $("search").value.toLowerCase();
+    return notes.filter(n => (n.title + " " + n.body).toLowerCase().includes(query));
+}
+
+$("selectToggle").onclick = () => {
+    selectMode = !selectMode;
+    selected.clear();
+    renderList();
+};
+
+$("selectAll").onclick = () => {
+    const visible = visibleNotes();
+    const allSelected = visible.length > 0 && visible.every(n => selected.has(n.id));
+    visible.forEach(n => allSelected ? selected.delete(n.id) : selected.add(n.id));
+    renderList();
+};
+
+$("deleteSelected").onclick = () => {
+    if (selected.size === 0) return;
+    if (!confirm("Удалить выбранные заметки (" + selected.size + ")? Это нельзя отменить.")) return;
+
+    clearTimeout(saveTimer);
+    notes = notes.filter(n => !selected.has(n.id));
+
+    if (notes.length === 0) {
+        notes.push({
+            id: crypto.randomUUID(),
+            title: "Новая заметка",
+            body: "",
+            updated: Date.now()
+        });
+    }
+
+    if (!notes.some(n => n.id === activeId)) activeId = notes[0].id;
+
+    selected.clear();
+    selectMode = false;
+    saveAll();
+    loadCurrent();
+};
+
+// Режим просмотра (после «Сохранить») / редактирования
+function applyMode(note) {
+    note = note || currentNote();
+    if (!note) return;
+    document.body.classList.toggle("viewing", !!note.saved);
+    $("modeBtn").textContent = note.saved ? "Редактировать" : "Сохранить";
+    $("viewTitle").textContent = note.title || "Без названия";
+}
+
+function toggleMode() {
+    const note = currentNote();
+    if (!note) return;
+
+    if (!note.saved) {
+        clearTimeout(saveTimer);
+        saveCurrent();
+        note.saved = true;
+        saveAll();
+        applyMode(note);
+        window.scrollTo(0, 0);
+    } else {
+        note.saved = false;
+        saveAll();
+        applyMode(note);
+        $("body").focus();
+    }
+}
+
+// Тема интерфейса
+const THEME_KEY = "studyspace_theme";
+
+function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    $("themeToggle").textContent = theme === "dark" ? "☀ Светлая" : "☾ Тёмная";
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
+}
+
+function createNote() {
+    saveCurrent();
+
+    const note = {
+        id: crypto.randomUUID(),
+        title: "Новая заметка",
+        body: "",
+        updated: Date.now()
+    };
+
+    notes.unshift(note);
+    activeId = note.id;
+
+    saveAll();
+    loadCurrent();
+    $("noteTitle").focus();
+}
+
+$("newNote").onclick = createNote;
+$("search").addEventListener("input", renderList);
+$("noteTitle").addEventListener("input", scheduleSave);
+$("body").addEventListener("input", scheduleSave);
+
+$("duplicate").onclick = () => {
+    saveCurrent();
+
+    const note = currentNote();
+    if (!note) return;
+
+    const copy = {
+        ...note,
+        id: crypto.randomUUID(),
+        title: note.title + " — копия",
+        updated: Date.now()
+    };
+
+    notes.unshift(copy);
+    activeId = copy.id;
+
+    saveAll();
+    loadCurrent();
+};
+
+$("delete").onclick = () => {
+    if (!confirm("Удалить эту заметку?")) return;
+
+    notes = notes.filter(n => n.id !== activeId);
+
+    if (notes.length === 0) {
+        notes.push({
+            id: crypto.randomUUID(),
+            title: "Новая заметка",
+            body: "",
+            updated: Date.now()
+        });
+    }
+
+    activeId = notes[0].id;
+    saveAll();
+    loadCurrent();
+};
+
+document.querySelectorAll("[data-wrap]").forEach(button => {
+    button.onclick = () => {
+        const textarea = $("body");
+        const token = button.dataset.wrap;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selected = textarea.value.slice(start, end) || "текст";
+
+        textarea.setRangeText(token + selected + token, start, end, "select");
+        textarea.focus();
+        scheduleSave();
+    };
+});
+
+document.querySelectorAll("[data-prefix]").forEach(button => {
+    button.onclick = () => {
+        const textarea = $("body");
+        const prefix = button.dataset.prefix;
+        const pos = textarea.selectionStart;
+        const lineStart = textarea.value.lastIndexOf("\n", pos - 1) + 1;
+
+        textarea.setRangeText(prefix, lineStart, lineStart, "end");
+        textarea.focus();
+        scheduleSave();
+    };
+});
+
+// mousedown + preventDefault: кнопка не отбирает фокус у поля формулы
+$("symbols").addEventListener("mousedown", e => {
+    if (e.target.closest("[data-latex]")) e.preventDefault();
+});
+
+$("symbols").addEventListener("click", event => {
+    const button = event.target.closest("[data-latex]");
+    if (!button) return;
+
+    const mf = $("formula");
+    if (typeof mf.insert !== "function") {
+        alert("Редактор формул ещё не загрузился. Проверьте интернет-соединение и обновите страницу.");
+        return;
+    }
+
+    mf.focus();
+    mf.insert(button.dataset.latex, { format: "latex", focus: true });
+});
+
+$("insertFormula").onclick = () => {
+    const latex = stripMathDelimiters($("formula").getValue());
+    if (!latex) return;
+
+    const textarea = $("body");
+    const pos = textarea.selectionStart;
+
+    const isBlock = /\\begin\{|\\int|\\sum|\\prod|\\lim/.test(latex);
+
+    const wrapped = isBlock
+        ? "\n$$\n" + latex + "\n$$\n"
+        : "\\(" + latex + "\\)";
+
+    textarea.setRangeText(wrapped, pos, textarea.selectionEnd, "end");
+
+    textarea.focus();
+    $("formula").setValue("");
+    scheduleSave();
+};
+
+// ---------- Экспорт / импорт заметок ----------
+// Снимок содержимого (без поля updated) — по нему понимаем, есть ли неэкспортированные изменения
+let exportedKey = "";
+function contentKey() {
+    return JSON.stringify(notes.map(n => [n.id, n.title, n.body]));
+}
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+$("exportBtn").onclick = () => {
+    saveCurrent();
+    downloadJSON(notes, "studyspace-notes.json");
+    exportedKey = contentKey();
+};
+
+// Одна заметка (формат тот же, поэтому её можно импортировать обратно)
+$("exportOne").onclick = () => {
+    saveCurrent();
+    const note = currentNote();
+    if (!note) return;
+    const name = (note.title || "").replace(/[\\\/:*?"<>|]+/g, "").trim().slice(0, 60) || "zametka";
+    downloadJSON([note], name + ".json");
+};
+
+// Очистка данных (для общих компьютеров)
+$("clearAll").onclick = () => {
+    if (!confirm("Удалить ВСЕ заметки из этого браузера? Это нельзя отменить.\n\nЕсли заметки нужны, сначала нажмите «Экспорт».")) return;
+
+    clearTimeout(saveTimer);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+
+    notes = [];
+    selected.clear();
+    selectMode = false;
+    $("search").value = "";
+    loadNotes();
+    exportedKey = contentKey();
+    loadCurrent();
+};
+
+// Напоминание при закрытии вкладки, если есть неэкспортированные изменения
+window.addEventListener("beforeunload", e => {
+    if (contentKey() !== exportedKey) {
+        e.preventDefault();
+        e.returnValue = "";
+    }
+});
+
+$("importBtn").onclick = () => $("importFile").click();
+
+$("importFile").addEventListener("change", async () => {
+    const file = $("importFile").files[0];
+    $("importFile").value = "";
+    if (!file) return;
+
+    try {
+        const data = JSON.parse(await file.text());
+        if (!Array.isArray(data)) throw new Error("format");
+
+        const ids = new Set(notes.map(n => n.id));
+        let added = 0;
+        data.forEach(n => {
+            if (!n || typeof n.title !== "string" || typeof n.body !== "string") return;
+            notes.push({
+                id: ids.has(n.id) || !n.id ? crypto.randomUUID() : n.id,
+                title: n.title,
+                body: n.body,
+                updated: Number(n.updated) || Date.now(),
+                saved: !!n.saved
+            });
+            added++;
+        });
+
+        saveAll();
+        renderList();
+        alert("Импортировано заметок: " + added);
+    } catch {
+        alert("Не удалось прочитать файл. Нужен файл, ранее сохранённый кнопкой «Экспорт».");
+    }
+});
+
+$("modeBtn").onclick = toggleMode;
+$("themeToggle").onclick = () => {
+    applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+};
+
+let savedTheme = null;
+try { savedTheme = localStorage.getItem(THEME_KEY); } catch {}
+applyTheme(savedTheme ||
+    (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+
+// Скрипты с defer выполняются ПОСЛЕ этого блока, поэтому ждём MathLive
+loadNotes();
+loadCurrent();
+exportedKey = contentKey();
+if (window.customElements) {
+    customElements.whenDefined("math-field").then(() => loadCurrent());
+}
+</script>
+</body>
+</html>
